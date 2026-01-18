@@ -1,3 +1,4 @@
+# Triggering build with newly added secret
 name: Azure Static Web Apps CI/CD
 
 on:
