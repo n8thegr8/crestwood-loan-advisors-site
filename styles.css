@@ -471,6 +471,10 @@ footer p {
         width: 120px;
         margin-bottom: 15px;
     }
+
+    .stories-grid {
+        grid-template-columns: 1fr;
+    }
     
     h1 {
         font-size: 1.8rem;
