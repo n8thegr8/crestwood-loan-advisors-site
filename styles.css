@@ -1,0 +1,488 @@
+/* Reset & Base Styles */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: #0F1B3E;
+    color: #EEEEEE;
+    font-family: 'Libre Franklin', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden; /* Prevent horizontal scroll from full-width elements */
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    box-shadow: inset 0 0 150px rgba(0, 100, 255, 0.4);
+    pointer-events: none;
+    z-index: 900;
+}
+
+a {
+    color: #EEEEEE;
+    text-decoration: none;
+    transition: opacity 0.2s ease;
+}
+
+a:hover {
+    opacity: 0.8;
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Avenir', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin-bottom: 1rem;
+    font-weight: 500;
+}
+
+h1 {
+    font-size: 2.2rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+h2 {
+    font-size: 1.8rem;
+    color: #fff;
+    margin-top: 1.5rem;
+}
+
+p {
+    margin-bottom: 1.2rem;
+    font-size: 1.05rem;
+    max-width: 800px;
+}
+
+/* Layout */
+.container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* Header */
+header {
+    padding: 40px 0 20px;
+    text-align: left;
+}
+
+.site-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    margin-bottom: 5px;
+    color: #fff;
+}
+
+.site-tagline {
+    font-size: 1.2rem;
+    font-weight: 400;
+    opacity: 0.9;
+    letter-spacing: 0.05em;
+}
+
+/* Navigation */
+/* Navigation */
+nav {
+    background-color: #0c1633;
+    /* Use sticky so it sits below header naturally, but sticks to top on scroll */
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    /* Break out of container to span full width */
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
+    padding: 0 20px;
+}
+
+/* Spacer removed since nav is no longer fixed over content */
+body {
+    padding-top: 0;
+}
+
+nav ul {
+    list-style: none;
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 25px;
+    justify-content: center;
+    align-items: center;
+    margin: 0;
+    padding: 0;
+    /* Ensure content stays within container-like width if needed, 
+       but centering handles this well for now */
+    max-width: 1280px;
+    width: 100%;
+}
+
+nav a {
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding-bottom: 2px;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap; /* Prevent text wrapping */
+}
+
+nav a:hover, nav a.active {
+    border-bottom-color: #F58025;
+    color: #fff;
+}
+
+/* Burger Menu (Hidden on Desktop) */
+.burger-menu {
+    display: none;
+}
+
+/* Main Content */
+main {
+    padding: 60px 0;
+    min-height: 60vh;
+}
+
+.page-content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 40px;
+}
+
+/* Product Layout */
+.product-layout {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    gap: 60px;
+    align-items: start;
+}
+
+.product-image {
+    margin-bottom: 30px;
+}
+
+.product-image img {
+    width: 100%;
+    height: auto;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    border-radius: 4px;
+}
+
+.award-laurels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 25px;
+    margin: 30px 0;
+    justify-items: center;
+}
+
+.award-laurels img {
+    max-width: 150px;
+    width: 100%;
+    height: auto;
+    opacity: 0.95;
+    transition: transform 0.3s ease;
+}
+
+.award-laurels img:hover {
+    transform: scale(1.05);
+    opacity: 1;
+}
+
+.product-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.product-sidebar-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.product-sidebar-content p {
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin-bottom: 1.5rem;
+}
+
+.buttons {
+    display: flex;
+    gap: 20px;
+    margin: 20px 0 30px 0;
+    flex-wrap: wrap;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 30px;
+    font-size: 1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    text-align: center;
+    width: 100%;
+}
+
+.btn i {
+    margin-left: 10px;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    opacity: 1;
+}
+
+.btn-purchase {
+    background-color: #F58025; /* Orange */
+    color: #fff;
+}
+
+.btn-stream {
+    background-color: #FFD700; /* Gold */
+    color: #0F1B3E; /* Dark text for contrast */
+}
+
+/* Elongated Image Styling */
+.elongated-photo {
+    width: 100%;
+    height: auto;
+    border-radius: 4px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    object-fit: cover;
+}
+
+/* Quotes/Praise */
+.praise-section {
+    margin-top: 60px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 40px;
+}
+
+.praise-section h2 {
+    font-size: 1.8rem;
+    margin-bottom: 30px;
+    color: #e0e0e0;
+}
+
+blockquote {
+    border-left: 4px solid #f6b033;
+    padding-left: 20px;
+    margin: 0 0 30px 0;
+    font-style: italic;
+    color: #d0d0d0;
+    font-size: 1.1rem;
+}
+
+.quote-container {
+    display: flex;
+    align-items: flex-start;
+    gap: 30px;
+    margin-bottom: 30px;
+}
+
+.quote-image {
+    flex-shrink: 0;
+    width: 150px;
+}
+
+.quote-image img {
+    width: 100%;
+    border-radius: 4px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.quote-container blockquote {
+    margin-bottom: 0;
+    flex: 1;
+}
+
+.attribution {
+    display: block;
+    margin-top: 10px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    font-style: normal;
+}
+
+.stories-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 60px 0;
+}
+
+.stories-grid img {
+    width: 100%;
+    height: auto;
+    border-radius: 4px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    transition: transform 0.2s;
+}
+
+.stories-grid img:hover {
+    transform: scale(1.02);
+}
+
+/* About Page */
+.about-layout {
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: 60px;
+}
+
+.contact-info {
+    margin-top: 30px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+}
+
+/* Footer */
+footer {
+    padding: 40px 0;
+    text-align: center;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 0.9rem;
+    color: #aaa;
+    margin-top: auto;
+}
+
+footer a {
+    color: #F58025;
+}
+
+footer p {
+    margin: 0 auto;
+    max-width: none;
+}
+
+/* Responsive */
+/* Responsive */
+@media (max-width: 768px) {
+    header {
+        text-align: center;
+        margin-top: 0;
+    }
+    
+    .site-title {
+        font-size: 1.8rem;
+    }
+
+    /* Mobile Nav */
+    /* Mobile Nav */
+    nav {
+        /* Disable sticky on mobile to prevent floating issues */
+        position: relative; 
+        justify-content: space-between;
+        height: auto; /* Allow nav to grow with content */
+        flex-wrap: wrap; /* Allow menu to wrap to next line */
+        padding: 15px 20px; /* Adjust padding for better look */
+    }
+
+    nav ul {
+        /* Switch to static positioning to push content down instead of floating over it */
+        position: static;
+        /* Remove the background color if it's redundant, or keep it to match nav */
+        background-color: #0c1633;
+        display: none; /* Hidden by default */
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        transform: none; /* Remove translation */
+        transition: none; /* Remove transform transition */
+        z-index: 99;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding-bottom: 20px;
+        margin-top: 10px; /* Add some spacing from the burger icon */
+    }
+
+    nav ul.active {
+        display: flex; /* Show when active */
+        transform: none;
+    }
+
+    nav a {
+        opacity: 1; /* Remove fade animation complexity for checking */
+        animation: none;
+        padding: 15px 0; /* Increase tap target size */
+    }
+
+    /* Burger Menu */
+    .burger-menu {
+        display: block;
+        cursor: pointer;
+    }
+
+    .burger-menu div {
+        width: 25px;
+        height: 3px;
+        background-color: #EEEEEE;
+        margin: 5px;
+        transition: all 0.3s ease;
+    }
+
+    /* Burger Animation */
+    .burger-menu.toggle .line1 {
+        transform: rotate(-45deg) translate(-5px, 6px);
+    }
+
+    .burger-menu.toggle .line2 {
+        opacity: 0;
+    }
+
+    .burger-menu.toggle .line3 {
+        transform: rotate(45deg) translate(-5px, -6px);
+    }
+
+    .product-layout, .about-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .product-image {
+        max-width: 300px;
+        margin: 0 auto 40px auto;
+    }
+
+    .quote-container {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .quote-image {
+        width: 120px;
+        margin-bottom: 15px;
+    }
+    
+    h1 {
+        font-size: 1.8rem;
+    }
+}
+
+@keyframes navLinkFade {
+    from {
+        opacity: 0;
+        transform: translateX(50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0px);
+    }
+}
