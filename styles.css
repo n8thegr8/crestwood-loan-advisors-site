@@ -183,14 +183,14 @@ main {
 
 .award-laurels {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 25px;
+    grid-template-columns: 1fr; /* Stacked */
+    gap: 30px;
     margin: 30px 0;
     justify-items: center;
 }
 
 .award-laurels img {
-    max-width: 150px;
+    max-width: 220px; /* Larger */
     width: 100%;
     height: auto;
     opacity: 0.95;
@@ -207,16 +207,12 @@ main {
     flex-direction: column;
 }
 
-.product-sidebar-content {
-    display: flex;
-    flex-direction: column;
+.product-details .product-image.smaller-image {
+    max-width: 75%;
+    margin: 40px auto 0 auto;
 }
 
-.product-sidebar-content p {
-    font-size: 0.95rem;
-    line-height: 1.5;
-    margin-bottom: 1.5rem;
-}
+/* ... existing code ... */
 
 .buttons {
     display: flex;
@@ -225,82 +221,11 @@ main {
     flex-wrap: wrap;
 }
 
-.btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 12px 30px;
-    font-size: 1rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    text-align: center;
-    width: 100%;
-}
-
-.btn i {
-    margin-left: 10px;
-}
-
-.btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-    opacity: 1;
-}
-
-.btn-purchase {
-    background-color: #F58025; /* Orange */
-    color: #fff;
-}
-
-.btn-stream {
-    background-color: #FFD700; /* Gold */
-    color: #0F1B3E; /* Dark text for contrast */
-}
-
-/* Elongated Image Styling */
-.elongated-photo {
-    width: 100%;
-    height: auto;
-    border-radius: 4px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.4);
-    object-fit: cover;
-}
-
-/* Quotes/Praise */
-.praise-section {
-    margin-top: 60px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    padding-top: 40px;
-}
-
-.praise-section h2 {
-    font-size: 1.8rem;
-    margin-bottom: 30px;
-    color: #e0e0e0;
-}
-
-blockquote {
-    border-left: 4px solid #f6b033;
-    padding-left: 20px;
-    margin: 0 0 30px 0;
-    font-style: italic;
-    color: #d0d0d0;
-    font-size: 1.1rem;
-}
-
-.quote-container {
-    display: flex;
-    align-items: flex-start;
-    gap: 30px;
-    margin-bottom: 30px;
-}
+/* ... existing code ... */
 
 .quote-image {
     flex-shrink: 0;
-    width: 150px;
+    width: 190px; /* Increased from 150px */
 }
 
 .quote-image img {
