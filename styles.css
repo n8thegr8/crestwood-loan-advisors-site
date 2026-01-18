@@ -456,9 +456,10 @@ footer p {
         grid-template-columns: 1fr;
     }
 
-    .product-image {
-        max-width: 300px;
-        margin: 0 auto 40px auto;
+    .product-image, .about-sidebar {
+        width: 100%;
+        max-width: none;
+        margin: 0 0 40px 0;
     }
 
     .quote-container {
