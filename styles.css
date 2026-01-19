@@ -186,7 +186,7 @@ main {
     display: grid;
     grid-template-columns: 1fr; /* Stacked */
     gap: 30px;
-    margin: 30px 0;
+    margin: 70px 0 30px;
     justify-items: center;
 }
 
