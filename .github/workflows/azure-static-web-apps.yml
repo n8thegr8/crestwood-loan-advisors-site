@@ -1,4 +1,3 @@
-# Triggering build with newly added secret
 name: Azure Static Web Apps CI/CD
 
 on:
@@ -10,6 +9,10 @@ on:
     branches:
       - main
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   build_and_deploy_job:
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
@@ -20,11 +23,35 @@ jobs:
         with:
           submodules: true
           lfs: false
-      - name: Build And Deploy
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy Infrastructure
+        uses: azure/arm-deploy@v1
+        id: infra
+        with:
+          subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          resourceGroupName: ${{ secrets.AZURE_RESOURCE_GROUP }}
+          template: ./infra/main.bicep
+          parameters: staticSiteName=crestwood-loan-advisors-site
+
+      - name: Get SWA Deployment Token
+        id: get_token
+        run: |
+          token=$(az staticwebapp secrets list --name crestwood-loan-advisors-site --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --query "properties.apiKey" -o tsv)
+          echo "::add-mask::$token"
+          echo "SWA_TOKEN=$token" >> $GITHUB_ENV
+
+      - name: Deploy Content
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          azure_static_web_apps_api_token: ${{ env.SWA_TOKEN }}
           repo_token: ${{ secrets.GITHUB_TOKEN }} # Used for Github integrations (i.e. PR comments)
           action: "upload"
           ###### Repository/Build Configurations - These values can be configured to match your app requirements. ######
@@ -40,9 +67,23 @@ jobs:
     runs-on: ubuntu-latest
     name: Close Pull Request Job
     steps:
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Get SWA Deployment Token
+        id: get_token
+        run: |
+          token=$(az staticwebapp secrets list --name crestwood-loan-advisors-site --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --query "properties.apiKey" -o tsv)
+          echo "::add-mask::$token"
+          echo "SWA_TOKEN=$token" >> $GITHUB_ENV
+
       - name: Close Pull Request
         id: closepullrequest
         uses: Azure/static-web-apps-deploy@v1
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          azure_static_web_apps_api_token: ${{ env.SWA_TOKEN }}
           action: "close"
