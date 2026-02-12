@@ -140,11 +140,24 @@ strong {
     margin: 0 auto 50px;
 }
 
+/* Scam Grid */
 .scam-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 30px;
     margin-bottom: 50px;
+}
+
+.scam-item-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    height: 100%;
+}
+
+.scam-item-link:hover {
+    text-decoration: none;
+    color: inherit;
 }
 
 .scam-item {
@@ -155,11 +168,17 @@ strong {
     text-align: center;
     transition: transform 0.2s ease;
     border: 1px solid var(--border-color);
+    height: 100%; /* Ensure full height */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 }
 
-.scam-item:hover {
+.scam-item-link:hover .scam-item {
     transform: translateY(-5px);
     box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    border-color: var(--primary-color);
 }
 
 .icon-wrapper {
