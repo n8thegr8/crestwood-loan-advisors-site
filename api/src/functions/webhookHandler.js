@@ -1,0 +1,116 @@
+const { app } = require('@azure/functions');
+const { fetchFile, createBranch, commitFile, createPullRequest } = require('../services/githubService');
+const { modifyHtmlWithLlm } = require('../services/llmService');
+
+app.http('webhookHandler', {
+    methods: ['POST'],
+    authLevel: 'function',
+    handler: async (request, context) => {
+        context.log('Webhook payload received.');
+
+        try {
+            // Determine content type
+            const contentType = request.headers.get('content-type') || '';
+            let userRequest = '';
+            let assetUrls = [];
+            let senderEmail = '';
+
+            // Handle SendGrid Inbound Parse (multipart/form-data)
+            if (contentType.includes('multipart/form-data')) {
+                const formData = await request.formData();
+                
+                // Get the sender from SendGrid payload
+                // SendGrid sends "from" which looks like: "Name <email@domain.com>" or just "email@domain.com"
+                const fromField = formData.get('from') || '';
+                const emailMatch = fromField.match(/<([^>]+)>/) || [null, fromField.trim()];
+                senderEmail = emailMatch[1] || fromField.trim();
+                
+                // Use the text/plain body as the request
+                userRequest = formData.get('text') || formData.get('subject') || '';
+                
+                // Process attachments here in the future
+                // const attachments = formData.get('attachments'); // SendGrid uses number of attachments
+            } else if (contentType.includes('application/json')) {
+                const body = await request.json();
+                userRequest = body.request || body.text || '';
+                senderEmail = body.sender || body.from || '';
+                if (body.assetUrls) assetUrls = body.assetUrls;
+            } else {
+                const text = await request.text();
+                userRequest = text;
+            }
+
+            // Sender Validation Logic
+            const allowedSendersRaw = process.env.ALLOWED_SENDERS || '';
+            const allowedSenders = allowedSendersRaw.split(',').map(e => e.trim().toLowerCase());
+            
+            if (senderEmail && allowedSenders.length > 0 && !allowedSenders.includes(senderEmail.toLowerCase())) {
+                context.log(`Rejected unauthorized sender: ${senderEmail}`);
+                return { status: 403, body: `Sender ${senderEmail} is not authorized to make site changes.` };
+            }
+
+            if (!userRequest) {
+                return { status: 400, body: 'User request content is required.' };
+            }
+
+            context.log(`Processing request: ${userRequest}`);
+
+            // 1. Fetch current HTML from staging branch
+            context.log('Fetching index.html from staging branch...');
+            const stagingFile = await fetchFile('staging', 'index.html');
+            if (!stagingFile) {
+                return { status: 500, body: 'index.html not found on staging branch.' };
+            }
+
+            // 2. Modify with LLM
+            context.log('Calling LLM to modify HTML...');
+            const newHtml = await modifyHtmlWithLlm(stagingFile.content, userRequest, assetUrls);
+
+            // 3. Create unique branch from staging
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            const newBranchName = `ai-update-${timestamp}`;
+            
+            context.log(`Creating new branch: ${newBranchName}`);
+            await createBranch('staging', newBranchName);
+
+            // 4. Commit updated file to new branch
+            context.log('Committing changes to new branch...');
+            await commitFile(
+                newBranchName, 
+                'index.html', 
+                newHtml, 
+                `Automated update from AI Site Manager\n\nRequest: ${userRequest}`, 
+                stagingFile.sha
+            );
+
+            // 5. Open Pull Request to main branch to trigger Azure Preview Environment
+            context.log('Creating Pull Request...');
+            const pr = await createPullRequest(
+                newBranchName, 
+                'main', 
+                `AI Update Request: ${userRequest.substring(0, 50)}`, 
+                `## Automated PR by AI Site Manager\n\n**User Request:**\n> ${userRequest}`
+            );
+
+            context.log(`PR Created successfully: ${pr.html_url}`);
+            
+            // In a complete implementation, we would send an approval email here.
+            // For now, we return the PR details in the webhook response.
+            return {
+                status: 200,
+                jsonBody: {
+                    message: "Successfully processed request and created PR.",
+                    prUrl: pr.html_url,
+                    prNumber: pr.number
+                }
+            };
+            
+        } catch (error) {
+            context.error(`Error processing webhook: ${error.message}`);
+            return {
+                status: 500,
+                body: `Internal Server Error: ${error.message}`
+            };
+        }
+    }
+});
