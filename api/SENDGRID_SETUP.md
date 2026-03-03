@@ -31,7 +31,7 @@ Now, you tell SendGrid where to forward the emails it receives.
 4. **Destination URL**: Enter the deployed public URL of your Azure Function on your CUSTOM DOMAIN. Do not use the raw \`.azurestaticapps.net\` URL because it will trigger a 301 redirect and drop the email payload.
    - Exact URL: `https://crestwoodloanadvisors.com/api/webhookHandler`
 5. **Check additional options**:
-   - Check **POST the raw, full MIME message**. (This is important! It ensures SendGrid sends the payload as `multipart/form-data` with attachments intact).
+   - **DO NOT** check "POST the raw, full MIME message". Leave it unchecked. We want SendGrid to parse the email fields (like `from`, `subject`, and `text`) for us automatically!
 6. Click **Add** or **Save**.
 
 ## Step 4: Test the Integration
