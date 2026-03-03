@@ -18,8 +18,14 @@ async function modifyHtmlWithLlm(currentHtml, userRequest, assetUrls = []) {
     
     const systemPrompt = `You are an expert web developer and designer.
 Your task is to modify the provided HTML based on the user's request.
-You MUST output ONLY valid HTML code. Do not include any markdown formatting like \`\`\`html.
-Use Tailwind CSS classes for styling.
+
+CRITICAL DESIGN CONSTRAINTS:
+1. Preserve the existing UI, UX, and overall design language of the site.
+2. ANY additions or modifications MUST seamlessly integrate with the current aesthetics.
+3. DO NOT introduce new CSS frameworks (like Tailwind or Bootstrap). Analyze and reuse the existing CSS classes, HTML structure, and styling paradigms found within the document.
+4. Only make the specific changes requested by the user, leaving the rest of the layout intact.
+
+You MUST output ONLY the raw, valid HTML code representing the entire modified document. Do not include any markdown formatting wrappers like \`\`\`html.
 If new assets (attachments like images, videos, documents) are provided, embed them appropriately in the HTML using their URLs.`;
 
     let assetsText = '';
