@@ -121,14 +121,21 @@ app.http('webhookHandler', {
 
             context.log(`PR Created successfully: ${pr.html_url}`);
             
+            // 5a. Await Azure Static Web Apps Build completion via GitHub Actions
+            const { waitForPrBuild } = require('../services/githubService');
+            context.log(`Waiting for preview environment to build for PR #${pr.number}...`);
+            const buildSuccess = await waitForPrBuild(pr.number);
+            
             // 6. Send the preview email to the original sender
-            if (senderEmail) {
+            if (senderEmail && buildSuccess) {
                 context.log(`Sending preview email to: ${senderEmail}`);
                 try {
                     await sendPreviewEmail(senderEmail, pr.html_url, pr.number);
                 } catch (emailError) {
                     context.error(`Failed to send preview email, but PR was created: ${emailError.message}`);
                 }
+            } else if (senderEmail && !buildSuccess) {
+                context.error(`Aborting preview email to ${senderEmail} because the Azure build failed. PR was still created: ${pr.html_url}`);
             }
             
             return {

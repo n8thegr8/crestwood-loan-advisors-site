@@ -116,10 +116,70 @@ async function mergePullRequest(pullNumber) {
     return response.data;
 }
 
+/**
+ * Polls the GitHub Actions API to wait for the PR's build to complete
+ */
+async function waitForPrBuild(prNumber, maxWaitSeconds = 300) {
+    const octokit = getOctokit();
+    const { owner, repo } = getRepoInfo();
+    const startTime = Date.now();
+    
+    // We poll every 15 seconds
+    const pollIntervalMs = 15000;
+
+    console.log(`Waiting for GitHub Actions build for PR #${prNumber} to complete...`);
+    
+    while ((Date.now() - startTime) < (maxWaitSeconds * 1000)) {
+        try {
+            // Get the head SHA for this PR to find its specific workflow run
+            const prData = await octokit.pulls.get({
+                owner,
+                repo,
+                pull_number: prNumber
+            });
+            const headSha = prData.data.head.sha;
+
+            // Fetch workflow runs for this SHA
+            const runs = await octokit.actions.listWorkflowRunsForRepo({
+                owner,
+                repo,
+                head_sha: headSha,
+                event: 'pull_request'
+            });
+
+            if (runs.data.total_count > 0) {
+                const run = runs.data.workflow_runs[0];
+                console.log(`Build Status: ${run.status} | Conclusion: ${run.conclusion}`);
+                
+                if (run.status === 'completed') {
+                    if (run.conclusion === 'success') {
+                        console.log(`Build completed successfully!`);
+                        return true;
+                    } else {
+                        console.error(`Build finished with non-success conclusion: ${run.conclusion}`);
+                        return false;
+                    }
+                }
+            } else {
+                console.log(`No workflow runs found yet for PR #${prNumber} (SHA: ${headSha}). Waiting...`);
+            }
+        } catch (error) {
+            console.error(`Error checking build status: ${error.message}`);
+        }
+
+        // Wait before polling again
+        await new Promise(resolve => setTimeout(resolve, pollIntervalMs));
+    }
+
+    console.warn(`Timed out waiting for PR #${prNumber} to build after ${maxWaitSeconds} seconds.`);
+    return false;
+}
+
 module.exports = {
     fetchFile,
     createBranch,
     commitFile,
     createPullRequest,
-    mergePullRequest
+    mergePullRequest,
+    waitForPrBuild
 };
