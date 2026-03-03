@@ -31,8 +31,29 @@ app.http('webhookHandler', {
                 userRequest = formData.get('text') || formData.get('subject') || '';
                 emailSubject = formData.get('subject') || '';
                 
-                // Process attachments here in the future
-                // const attachments = formData.get('attachments'); // SendGrid uses number of attachments
+                // Process attachments from SendGrid
+                const numAttachments = parseInt(formData.get('attachments') || '0', 10);
+                if (numAttachments > 0) {
+                    const { uploadAsset } = require('../services/azureBlobService');
+                    for (let i = 1; i <= numAttachments; i++) {
+                        const fileBlob = formData.get(`attachment${i}`);
+                        if (fileBlob && typeof fileBlob === 'object') {
+                            const originalFilename = fileBlob.name || `attachment${i}`;
+                            const mimetype = fileBlob.type || 'application/octet-stream';
+                            const arrayBuffer = await fileBlob.arrayBuffer();
+                            const buffer = Buffer.from(arrayBuffer);
+                            
+                            context.log(`Uploading attachment: ${originalFilename}`);
+                            try {
+                                const url = await uploadAsset(buffer, originalFilename, mimetype);
+                                assetUrls.push(url);
+                                context.log(`Attachment uploaded successfully: ${url}`);
+                            } catch (uploadError) {
+                                context.error(`Failed to upload attachment ${originalFilename}: ${uploadError.message}`);
+                            }
+                        }
+                    }
+                }
             } else if (contentType.includes('application/json')) {
                 const body = await request.json();
                 userRequest = body.request || body.text || '';

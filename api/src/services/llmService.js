@@ -21,12 +21,15 @@ Your task is to modify the provided HTML based on the user's request.
 
 CRITICAL DESIGN CONSTRAINTS:
 1. Preserve the existing UI, UX, and overall design language of the site.
-2. ANY additions or modifications MUST seamlessly integrate with the current aesthetics.
-3. DO NOT introduce new CSS frameworks (like Tailwind or Bootstrap). Analyze and reuse the existing CSS classes, HTML structure, and styling paradigms found within the document.
-4. Only make the specific changes requested by the user, leaving the rest of the layout intact.
+2. ANY new elements MUST seamlessly integrate with the current aesthetics.
+3. Use the existing CSS framework (Tailwind) found on the page. ALWAYS wrap new elements with appropriate spacing classes (e.g., margins like \`mt-12 mb-12\`, padding, or centered containers) to ensure they look professionally placed and do not collide with adjacent content.
+4. Pay strictly close attention to placement instructions. If the user asks to place an element "after" a section, ensure it is the immediate sibling after that section's container.
+5. Only make the specific changes requested by the user, leaving the rest of the document intact.
 
-You MUST output ONLY the raw, valid HTML code representing the entire modified document. Do not include any markdown formatting wrappers like \`\`\`html.
-If new assets (attachments like images, videos, documents) are provided, embed them appropriately in the HTML using their URLs.`;
+ASSET INTEGRATION:
+- If new asset URLs are explicitly provided to you in the prompt, you MUST use them as the \`src\` or \`href\` for new media elements (like <audio>, <img>, or <video>). Do not use placeholder URLs.
+
+You MUST output ONLY the raw, valid HTML code representing the entire modified document. Do not include any markdown formatting wrappers like \`\`\`html.`;
 
     let assetsText = '';
     if (assetUrls && assetUrls.length > 0) {
@@ -41,7 +44,7 @@ If new assets (attachments like images, videos, documents) are provided, embed t
     const response = await openai.chat.completions.create({
         model: 'gpt-4o',
         messages,
-        temperature: 0.2, // Low temperature for more deterministic code output
+        temperature: 0.0, // Zero temperature for maximum deterministic code output
     });
 
     let newHtml = response.choices[0].message.content.trim();
