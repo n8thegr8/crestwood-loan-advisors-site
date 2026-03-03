@@ -1,6 +1,7 @@
 const { app } = require('@azure/functions');
 const { fetchFile, createBranch, commitFile, createPullRequest } = require('../services/githubService');
 const { modifyHtmlWithLlm } = require('../services/llmService');
+const { sendPreviewEmail } = require('../services/emailService');
 
 app.http('webhookHandler', {
     methods: ['POST'],
@@ -94,8 +95,16 @@ app.http('webhookHandler', {
 
             context.log(`PR Created successfully: ${pr.html_url}`);
             
-            // In a complete implementation, we would send an approval email here.
-            // For now, we return the PR details in the webhook response.
+            // 6. Send the preview email to the original sender
+            if (senderEmail) {
+                context.log(`Sending preview email to: ${senderEmail}`);
+                try {
+                    await sendPreviewEmail(senderEmail, pr.html_url);
+                } catch (emailError) {
+                    context.error(`Failed to send preview email, but PR was created: ${emailError.message}`);
+                }
+            }
+            
             return {
                 status: 200,
                 jsonBody: {
