@@ -62,6 +62,8 @@ jobs:
           output_location: "." # Built app content directory - optional
           skip_app_build: true
           ###### End of Repository/Build Configurations ######
+        env:
+          azure_static_web_apps_api_token: ${{ env.SWA_TOKEN }}
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
