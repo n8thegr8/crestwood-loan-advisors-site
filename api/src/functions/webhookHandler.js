@@ -15,6 +15,7 @@ app.http('webhookHandler', {
             let userRequest = '';
             let assetUrls = [];
             let senderEmail = '';
+            let emailSubject = '';
 
             // Handle SendGrid Inbound Parse (multipart/form-data)
             if (contentType.includes('multipart/form-data')) {
@@ -28,6 +29,7 @@ app.http('webhookHandler', {
                 
                 // Use the text/plain body as the request
                 userRequest = formData.get('text') || formData.get('subject') || '';
+                emailSubject = formData.get('subject') || '';
                 
                 // Process attachments here in the future
                 // const attachments = formData.get('attachments'); // SendGrid uses number of attachments
@@ -35,6 +37,7 @@ app.http('webhookHandler', {
                 const body = await request.json();
                 userRequest = body.request || body.text || '';
                 senderEmail = body.sender || body.from || '';
+                emailSubject = body.subject || '';
                 if (body.assetUrls) assetUrls = body.assetUrls;
             } else {
                 const text = await request.text();
@@ -55,6 +58,29 @@ app.http('webhookHandler', {
             }
 
             context.log(`Processing request: ${userRequest}`);
+
+            // Check if this is a reply to an existing PR preview email
+            const prMatch = emailSubject.match(/\[PR\s+#(\d+)\]/i);
+            if (prMatch) {
+                const prNumber = parseInt(prMatch[1], 10);
+                const isApproval = /\b(approve|approved|looks good|lgtm|merge|go ahead|do it)\b/i.test(userRequest);
+                
+                if (isApproval) {
+                    context.log(`Approval received for PR #${prNumber}. Merging...`);
+                    const { mergePullRequest } = require('../services/githubService');
+                    await mergePullRequest(prNumber);
+                    return {
+                        status: 200,
+                        jsonBody: { message: `Successfully merged PR #${prNumber}.` }
+                    };
+                } else {
+                    context.log(`Reply to PR #${prNumber} received, but no approval keyword found.`);
+                    return {
+                        status: 200,
+                        jsonBody: { message: `No approval keyword found. Reply with 'Approved' to deploy.` }
+                    };
+                }
+            }
 
             // 1. Fetch current HTML from staging branch
             context.log('Fetching index.html from staging branch...');

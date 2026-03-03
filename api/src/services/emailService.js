@@ -27,7 +27,7 @@ async function sendPreviewEmail(toEmail, prUrl, prNumber) {
     const msg = {
         to: toEmail,
         from: fromEmail,
-        subject: `Your Site Update is Ready for Review!`,
+        subject: `Your Site Update is Ready for Review! [PR #${prNumber}]`,
         text: `Your requested changes have been processed by the AI Site Manager.\n\nA Secure Preview Environment has been automatically generated for you to review the changes before they go live.\n\nPlease visit your live Preview URL:\n${previewUrl}\n\n(Note: It may take 1-3 minutes to finish building. Refresh if you see a 404).\n\nIf approved, it will be merged via your pull request: ${prUrl}`,
         html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
