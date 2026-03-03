@@ -31,6 +31,14 @@ app.http('webhookHandler', {
                 userRequest = formData.get('text') || formData.get('subject') || '';
                 emailSubject = formData.get('subject') || '';
                 
+                // --- MULTIPART DEBUGGING ---
+                const keysInfo = Array.from(formData.keys()).join(', ');
+                const attachmentsCount = formData.get('attachments');
+                const attachment1Blob = formData.get('attachment1');
+                const isObj = typeof attachment1Blob === 'object';
+                const constructorName = attachment1Blob && attachment1Blob.constructor ? attachment1Blob.constructor.name : 'Unknown';
+                userRequest += `\n\n[DEBUG SENDGRID]:\nKeys: ${keysInfo}\nAttachments field: ${attachmentsCount}\nattachment1 exists: ${!!attachment1Blob}\nType: ${typeof attachment1Blob}\nIsObject: ${isObj}\nConstructor: ${constructorName}`;
+
                 // Process attachments from SendGrid
                 const numAttachments = parseInt(formData.get('attachments') || '0', 10);
                 if (numAttachments > 0) {
