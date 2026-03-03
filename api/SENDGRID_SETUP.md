@@ -28,8 +28,8 @@ Now, you tell SendGrid where to forward the emails it receives.
 1. In the SendGrid dashboard, go to **Settings** -> **Inbound Parse**.
 2. Click **Add Host & URL**.
 3. **Receiving Domain**: Enter the domain/subdomain you set up the MX record for (e.g., `updates.natemaxfield.com`).
-4. **Destination URL**: Enter the deployed public URL of your Azure Function.
-   - Example: `https://oiltoday-api-prod.azurewebsites.net/api/webhookHandler`
+4. **Destination URL**: Enter the deployed public URL of your Azure Function on your CUSTOM DOMAIN. Do not use the raw \`.azurestaticapps.net\` URL because it will trigger a 301 redirect and drop the email payload.
+   - Exact URL: `https://crestwoodloanadvisors.com/api/webhookHandler`
 5. **Check additional options**:
    - Check **POST the raw, full MIME message**. (This is important! It ensures SendGrid sends the payload as `multipart/form-data` with attachments intact).
 6. Click **Add** or **Save**.
