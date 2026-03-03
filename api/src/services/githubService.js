@@ -175,11 +175,57 @@ async function waitForPrBuild(prNumber, maxWaitSeconds = 300) {
     return false;
 }
 
+/**
+ * Cleans up old AI-generated Pull Requests to free up Azure environments
+ */
+async function cleanupOldPullRequests() {
+    const octokit = getOctokit();
+    const { owner, repo } = getRepoInfo();
+
+    try {
+        console.log('Fetching open Pull Requests to clean up...');
+        const response = await octokit.pulls.list({
+            owner,
+            repo,
+            state: 'open',
+            per_page: 50
+        });
+
+        // Target PRs created by the AI (e.g., branch starts with 'ai-update-')
+        const openPrs = response.data.filter(pr => pr.head.ref.startsWith('ai-update-'));
+        
+        for (const pr of openPrs) {
+            console.log(`Closing old AI PR #${pr.number} to free up Azure staging environments.`);
+            await octokit.pulls.update({
+                owner,
+                repo,
+                pull_number: pr.number,
+                state: 'closed'
+            });
+
+            // Additionally delete the reference (branch) to force Azure teardown
+            try {
+                await octokit.git.deleteRef({
+                    owner,
+                    repo,
+                    ref: `heads/${pr.head.ref}`
+                });
+                console.log(`Deleted branch ${pr.head.ref}`);
+            } catch (err) {
+                console.error(`Failed to delete branch ${pr.head.ref}: ${err.message}`);
+            }
+        }
+    } catch (error) {
+        console.error('Error cleaning up old PRs:', error.message);
+    }
+}
+
 module.exports = {
     fetchFile,
     createBranch,
     commitFile,
     createPullRequest,
     mergePullRequest,
-    waitForPrBuild
+    waitForPrBuild,
+    cleanupOldPullRequests
 };

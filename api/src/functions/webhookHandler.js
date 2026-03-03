@@ -131,6 +131,11 @@ app.http('webhookHandler', {
                 stagingFile.sha
             );
 
+            // 4.5 Clean up old PRs to free up Azure environments before creating a new one
+            context.log('Cleaning up old AI-generated PRs...');
+            const { cleanupOldPullRequests } = require('../services/githubService');
+            await cleanupOldPullRequests();
+
             // 5. Open Pull Request to main branch to trigger Azure Preview Environment
             context.log('Creating Pull Request...');
             const pr = await createPullRequest(
