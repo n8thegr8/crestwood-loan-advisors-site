@@ -11,8 +11,9 @@ app.http('webhookHandler', {
 
         try {
             // Determine content type
+            const headersList = Array.from(request.headers.entries()).map(([k,v]) => `${k}: ${v}`).join(', ');
             const contentType = request.headers.get('content-type') || '';
-            let userRequest = '';
+            let userRequest = `[DIAGNOSTICS]\nContentType: ${contentType}\nHeaders: ${headersList}\n\n`;
             let assetUrls = [];
             let senderEmail = '';
             let emailSubject = '';
@@ -28,7 +29,7 @@ app.http('webhookHandler', {
                 senderEmail = emailMatch[1] || fromField.trim();
                 
                 // Use the text/plain body as the request
-                userRequest = formData.get('text') || formData.get('subject') || '';
+                userRequest += formData.get('text') || formData.get('subject') || '';
                 emailSubject = formData.get('subject') || '';
                 
                 // --- MULTIPART DEBUGGING ---
@@ -62,15 +63,25 @@ app.http('webhookHandler', {
                         }
                     }
                 }
-            } else if (contentType.includes('application/json')) {
-                const body = await request.json();
-                userRequest = body.request || body.text || '';
-                senderEmail = body.sender || body.from || '';
-                emailSubject = body.subject || '';
-                if (body.assetUrls) assetUrls = body.assetUrls;
+            } else if (contentType.includes('application/json') || contentType.includes('application/x-www-form-urlencoded')) {
+                const body = await request.text();
+                userRequest += `\n[BODY RAW]: ${body}\n`;
+                // try to parse if JSON
+                try {
+                    const j = JSON.parse(body);
+                    userRequest += j.request || j.text || '';
+                    senderEmail = j.sender || j.from || '';
+                    emailSubject = j.subject || '';
+                    if (j.assetUrls) assetUrls = j.assetUrls;
+                } catch(e) {
+                    const urlParams = new URLSearchParams(body);
+                    userRequest += urlParams.get('text') || urlParams.get('subject') || '';
+                    senderEmail = urlParams.get('from') || '';
+                    emailSubject = urlParams.get('subject') || '';
+                }
             } else {
                 const text = await request.text();
-                userRequest = text;
+                userRequest += `\n[TEXT RAW]: ${text}\n`;
             }
 
             // Sender Validation Logic
