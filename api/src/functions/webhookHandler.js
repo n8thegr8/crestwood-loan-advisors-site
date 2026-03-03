@@ -125,7 +125,7 @@ app.http('webhookHandler', {
             if (senderEmail) {
                 context.log(`Sending preview email to: ${senderEmail}`);
                 try {
-                    await sendPreviewEmail(senderEmail, pr.html_url);
+                    await sendPreviewEmail(senderEmail, pr.html_url, pr.number);
                 } catch (emailError) {
                     context.error(`Failed to send preview email, but PR was created: ${emailError.message}`);
                 }
