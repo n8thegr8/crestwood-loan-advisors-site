@@ -12,9 +12,12 @@ function getSendGridClient() {
 /**
  * Sends an email response back to the user with the PR and staging link.
  */
-async function sendPreviewEmail(toEmail, prUrl) {
+async function sendPreviewEmail(toEmail, prUrl, prNumber) {
     const sg = getSendGridClient();
     const fromEmail = process.env.SENDGRID_FROM_EMAIL || 'changes@updates.natemaxfield.com';
+
+    // The Azure Preview URL format is highly predictable based on the Azure App ID + Region
+    const previewUrl = `https://blue-mud-0763ba80f-${prNumber}.eastus2.2.azurestaticapps.net`;
 
     // The Azure Preview URL format is typically based on the default hostname and PR number
     // E.g., https://blue-mud-0763ba80f.2.azurestaticapps.net
@@ -25,7 +28,7 @@ async function sendPreviewEmail(toEmail, prUrl) {
         to: toEmail,
         from: fromEmail,
         subject: `Your Site Update is Ready for Review!`,
-        text: `Your requested changes have been processed by the AI Site Manager.\n\nA Secure Preview Environment has been automatically generated for you to review the changes before they go live.\n\nPlease visit the Pull Request page on GitHub to access your live Preview URL:\n${prUrl}`,
+        text: `Your requested changes have been processed by the AI Site Manager.\n\nA Secure Preview Environment has been automatically generated for you to review the changes before they go live.\n\nPlease visit your live Preview URL:\n${previewUrl}\n\n(Note: It may take 1-3 minutes to finish building. Refresh if you see a 404).\n\nIf approved, it will be merged via your pull request: ${prUrl}`,
         html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
                 <h2 style="color: #2b6cb0;">Your Site Update is Ready!</h2>
@@ -35,16 +38,17 @@ async function sendPreviewEmail(toEmail, prUrl) {
                 <div style="background-color: #f7fafc; padding: 15px; border-left: 4px solid #4299e1; margin: 20px 0;">
                     <strong>Next Steps:</strong>
                     <ol>
-                        <li>Click the button below to view the Pull Request.</li>
-                        <li>Look for the automated comment from <strong>azure-static-web-apps</strong> containing your temporary staging URL.</li>
-                        <li>Review the live site. If everything looks good, simply click <strong>Merge Pull Request</strong> to push the changes to your live site!</li>
+                        <li>Click the button below to view the live preview of the site.</li>
+                        <li><strong>Note:</strong> It usually takes Azure 1-2 minutes to finish booting the staging server. If you see a "404 Not Found" page, just wait 60 seconds and refresh!</li>
+                        <li>Review the live site. If everything looks good, your team can merge the code to push it live!</li>
                     </ol>
                 </div>
 
-                <a href="${prUrl}" style="display: inline-block; background-color: #2b6cb0; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">View Changes & Preview Link</a>
+                <a href="${previewUrl}" style="display: inline-block; background-color: #2b6cb0; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">View Live Preview</a>
                 
                 <p style="margin-top: 30px; font-size: 12px; color: #718096;">
-                    * This is an automated message from your AI Site Manager. 
+                    * This is an automated message from your AI Site Manager.<br>
+                    <a href="${prUrl}" style="color: #a0aec0;">Advanced: View GitHub Pull Request Data</a>
                 </p>
             </div>
         `
