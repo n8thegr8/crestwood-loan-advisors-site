@@ -20,48 +20,54 @@ app.http('webhookHandler', {
 
             // Handle SendGrid Inbound Parse (multipart/form-data)
             if (contentType.includes('multipart/form-data')) {
-                const formData = await request.formData();
-                
-                // Get the sender from SendGrid payload
-                // SendGrid sends "from" which looks like: "Name <email@domain.com>" or just "email@domain.com"
-                const fromField = formData.get('from') || '';
-                const emailMatch = fromField.match(/<([^>]+)>/) || [null, fromField.trim()];
-                senderEmail = emailMatch[1] || fromField.trim();
-                
-                // Use the text/plain body as the request
-                userRequest += formData.get('text') || formData.get('subject') || '';
-                emailSubject = formData.get('subject') || '';
-                
-                // --- MULTIPART DEBUGGING ---
-                const keysInfo = Array.from(formData.keys()).join(', ');
-                const attachmentsCount = formData.get('attachments');
-                const attachment1Blob = formData.get('attachment1');
-                const isObj = typeof attachment1Blob === 'object';
-                const constructorName = attachment1Blob && attachment1Blob.constructor ? attachment1Blob.constructor.name : 'Unknown';
-                userRequest += `\n\n[DEBUG SENDGRID]:\nKeys: ${keysInfo}\nAttachments field: ${attachmentsCount}\nattachment1 exists: ${!!attachment1Blob}\nType: ${typeof attachment1Blob}\nIsObject: ${isObj}\nConstructor: ${constructorName}`;
+                try {
+                    const formData = await request.formData();
+                    
+                    const fromField = formData.get('from') || '';
+                    const emailMatch = fromField.match(/<([^>]+)>/) || [null, fromField.trim()];
+                    senderEmail = emailMatch[1] || fromField.trim();
+                    
+                    userRequest += formData.get('text') || formData.get('subject') || '';
+                    emailSubject = formData.get('subject') || '';
+                    
+                    let keysInfo = 'error';
+                    try { keysInfo = Array.from(formData.keys()).join(', '); } catch(e){}
+                    
+                    const attachmentsCount = formData.get('attachments') || '0';
+                    const attachment1Blob = formData.get('attachment1');
+                    const isObj = typeof attachment1Blob === 'object';
+                    const constructorName = attachment1Blob && attachment1Blob.constructor ? attachment1Blob.constructor.name : 'Unknown';
+                    const att1Name = attachment1Blob ? attachment1Blob.name : 'none';
+                    
+                    userRequest += `\n\n[DEBUG SENDGRID]:\nKeys: ${keysInfo}\nAttachments field: ${attachmentsCount}\nattachment1 exists: ${!!attachment1Blob}\nType: ${typeof attachment1Blob}\nIsObject: ${isObj}\nConstructor: ${constructorName}\nName: ${att1Name}`;
 
-                // Process attachments from SendGrid
-                const numAttachments = parseInt(formData.get('attachments') || '0', 10);
-                if (numAttachments > 0) {
-                    const { uploadAsset } = require('../services/azureBlobService');
-                    for (let i = 1; i <= numAttachments; i++) {
-                        const fileBlob = formData.get(`attachment${i}`);
-                        if (fileBlob && typeof fileBlob === 'object') {
-                            const originalFilename = fileBlob.name || `attachment${i}`;
-                            const mimetype = fileBlob.type || 'application/octet-stream';
-                            const arrayBuffer = await fileBlob.arrayBuffer();
-                            const buffer = Buffer.from(arrayBuffer);
-                            
-                            context.log(`Uploading attachment: ${originalFilename}`);
-                            try {
-                                const url = await uploadAsset(buffer, originalFilename, mimetype);
-                                assetUrls.push(url);
-                                context.log(`Attachment uploaded successfully: ${url}`);
-                            } catch (uploadError) {
-                                context.error(`Failed to upload attachment ${originalFilename}: ${uploadError.message}`);
+                    const numAttachments = parseInt(attachmentsCount, 10);
+                    if (numAttachments > 0) {
+                        const { uploadAsset } = require('../services/azureBlobService');
+                        for (let i = 1; i <= numAttachments; i++) {
+                            const fileBlob = formData.get(`attachment${i}`);
+                            if (fileBlob && typeof fileBlob === 'object' && typeof fileBlob.arrayBuffer === 'function') {
+                                const originalFilename = fileBlob.name || `attachment${i}`;
+                                const mimetype = fileBlob.type || 'application/octet-stream';
+                                const arrayBuffer = await fileBlob.arrayBuffer();
+                                const buffer = Buffer.from(arrayBuffer);
+                                
+                                context.log(`Uploading attachment: ${originalFilename}`);
+                                try {
+                                    const url = await uploadAsset(buffer, originalFilename, mimetype);
+                                    assetUrls.push(url);
+                                    userRequest += `\n[UPLOAD SUCCESS]: ${originalFilename} -> ${url}`;
+                                } catch (uploadError) {
+                                    context.error(`Failed to upload: ${uploadError.message}`);
+                                    userRequest += `\n[UPLOAD FAIL]: ${uploadError.message}`;
+                                }
+                            } else {
+                                userRequest += `\n[ATTACHMENT ${i} INVALID]: Type: ${typeof fileBlob}`;
                             }
                         }
                     }
+                } catch (formError) {
+                    userRequest += `\n\n[FATAL FORM ERROR]: ${formError.message}\nStack: ${formError.stack}`;
                 }
             } else if (contentType.includes('application/json') || contentType.includes('application/x-www-form-urlencoded')) {
                 const body = await request.text();
