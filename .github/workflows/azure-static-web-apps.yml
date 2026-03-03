@@ -48,6 +48,14 @@ jobs:
           echo "::add-mask::$token"
           echo "SWA_TOKEN=$token" >> $GITHUB_ENV
 
+      - name: Isolate Frontend Content
+        run: |
+          mkdir -p .swa-output
+          cp -v *.html *.css *.txt *.xml *.json .swa-output/ || true
+          cp -rv src .swa-output/src || true
+          cp -rv images .swa-output/images || true
+          cp -rv assets .swa-output/assets || true
+
       - name: Deploy Content
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
@@ -59,7 +67,7 @@ jobs:
           # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
           app_location: "/" # App source code path
           api_location: "api" # Api source code path - optional
-          output_location: "." # Built app content directory - optional
+          output_location: ".swa-output" # Built app content directory - optional
           skip_app_build: true
           ###### End of Repository/Build Configurations ######
         env:
