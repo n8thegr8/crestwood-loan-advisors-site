@@ -28,7 +28,7 @@ async function sendPreviewEmail(toEmail, prUrl, prNumber) {
         to: toEmail,
         from: fromEmail,
         subject: `Your Site Update is Ready for Review! [PR #${prNumber}]`,
-        text: `Your requested changes have been processed by the AI Site Manager.\n\nA Secure Preview Environment has been automatically generated for you to review the changes before they go live.\n\nPlease visit your live Preview URL:\n${previewUrl}\n\n(Note: It may take 1-3 minutes to finish building. Refresh if you see a 404).\n\nIf approved, it will be merged via your pull request: ${prUrl}`,
+        text: `Your requested changes have been processed by the AI Site Manager.\n\nA Secure Preview Environment has been automatically generated for you to review the changes before they go live.\n\nPlease visit your live Preview URL:\n${previewUrl}\n\nIf everything looks good, respond to this email with "Approved" and I will push it live!\n\n(Advanced: View GitHub Pull Request Data - ${prUrl})`,
         html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
                 <h2 style="color: #2b6cb0;">Your Site Update is Ready!</h2>
@@ -39,8 +39,7 @@ async function sendPreviewEmail(toEmail, prUrl, prNumber) {
                     <strong>Next Steps:</strong>
                     <ol>
                         <li>Click the button below to view the live preview of the site.</li>
-                        <li><strong>Note:</strong> It usually takes Azure 1-2 minutes to finish booting the staging server. If you see a "404 Not Found" page, just wait 60 seconds and refresh!</li>
-                        <li>Review the live site. If everything looks good, your team can merge the code to push it live!</li>
+                        <li>Review the live site. If everything looks good, <strong>Respond to this email with "Approved" and I will push it live!</strong></li>
                     </ol>
                 </div>
 
