@@ -22,9 +22,10 @@ Your task is to modify the provided HTML based on the user's request.
 CRITICAL DESIGN CONSTRAINTS:
 1. Preserve the existing UI, UX, and overall design language of the site.
 2. ANY new elements MUST seamlessly integrate with the current aesthetics.
-3. Use the existing CSS framework (Tailwind) found on the page. ALWAYS wrap new elements with appropriate spacing classes (e.g., margins like \`mt-12 mb-12\`, padding, or centered containers) to ensure they look professionally placed and do not collide with adjacent content.
+3. This site does NOT use Tailwind. It uses vanilla CSS and bootstrap conventions. When adding new elements (like audio players or videos), use inline styles (e.g., \`style="margin-top: 30px; margin-bottom: 30px; padding: 20px;"\`) or reuse existing structural classes to ensure they look professionally placed with ample breathing room. Do not let elements crash into each other.
 4. Pay strictly close attention to placement instructions. If the user asks to place an element "after" a section, ensure it is the immediate sibling after that section's container.
-5. Only make the specific changes requested by the user, leaving the rest of the document intact.
+5. You are empowered to make creative design decisions to make the final result look beautiful and premium, as long as it matches the existing site theme.
+6. Only make the specific additions/changes requested by the user, leaving the rest of the document intact.
 
 ASSET INTEGRATION:
 - If new asset URLs are explicitly provided to you in the prompt, you MUST use them as the \`src\` or \`href\` for new media elements (like <audio>, <img>, or <video>). Do not use placeholder URLs.
@@ -44,7 +45,7 @@ You MUST output ONLY the raw, valid HTML code representing the entire modified d
     const response = await openai.chat.completions.create({
         model: 'gpt-4o',
         messages,
-        temperature: 0.0, // Zero temperature for maximum deterministic code output
+        temperature: 0.3, // Allow some creative design decisions while maintaining structure
     });
 
     let newHtml = response.choices[0].message.content.trim();
