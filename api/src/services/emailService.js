@@ -39,6 +39,7 @@ async function sendPreviewEmail(toEmail, prUrl, prNumber) {
                     <strong>Next Steps:</strong>
                     <ol>
                         <li>Click the button below to view the live preview of the site.</li>
+                        <li><strong>Note:</strong> It usually takes Azure 1-2 minutes to finish booting the staging server. If you see a "404 Not Found" page, just wait 60 seconds and refresh!</li>
                         <li>Review the live site. If everything looks good, <strong>Respond to this email with "Approved" and I will push it live!</strong></li>
                     </ol>
                 </div>
