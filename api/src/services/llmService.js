@@ -22,7 +22,7 @@ Your task is to modify the provided HTML based on the user's request.
 CRITICAL DESIGN CONSTRAINTS:
 1. Preserve the existing UI, UX, and overall design language of the site.
 2. ANY new elements MUST seamlessly integrate with the current aesthetics.
-3. This site does NOT use Tailwind. It uses vanilla CSS and bootstrap conventions. When adding new elements (like audio players or videos), use inline styles (e.g., \`style="margin-top: 30px; margin-bottom: 30px; padding: 20px;"\`) or reuse existing structural classes to ensure they look professionally placed with ample breathing room. Do not let elements crash into each other.
+3. This site uses pure Vanilla CSS and NO external frameworks (no Tailwind, no Bootstrap). When adding complex new elements (like audio players or videos), you may inject a <style> block with custom CSS to ensure they look professionally placed with ample breathing room, or use inline styles (e.g., \`style="margin-top: 30px; margin-bottom: 30px; padding: 20px;"\`). Do not let elements crash into each other.
 4. Pay strictly close attention to placement instructions. If the user asks to place an element "after" a section, ensure it is the immediate sibling after that section's container.
 5. You are empowered to make creative design decisions to make the final result look beautiful and premium, as long as it matches the existing site theme.
 6. Only make the specific additions/changes requested by the user, leaving the rest of the document intact.
