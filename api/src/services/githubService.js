@@ -40,9 +40,9 @@ async function fetchFile(branch, path) {
 }
 
 /**
- * Creates a new branch from a base branch
+ * Creates a new branch from a base branch, or force-resets it if it already exists.
  */
-async function createBranch(baseBranch, newBranch) {
+async function resetOrCreateBranch(baseBranch, targetBranch) {
     const octokit = getOctokit();
     const { owner, repo } = getRepoInfo();
 
@@ -54,13 +54,44 @@ async function createBranch(baseBranch, newBranch) {
     });
     const sha = baseRefResponse.data.object.sha;
 
-    // Create the new branch
-    await octokit.git.createRef({
+    try {
+        // Try modifying existing branch
+        await octokit.git.updateRef({
+            owner,
+            repo,
+            ref: `heads/${targetBranch}`,
+            sha,
+            force: true
+        });
+    } catch (e) {
+        // Create the new branch
+        await octokit.git.createRef({
+            owner,
+            repo,
+            ref: `refs/heads/${targetBranch}`,
+            sha,
+        });
+    }
+}
+
+/**
+ * Finds an open PR originating from the persistent ai-staging branch
+ */
+async function findOpenAiStagingPr() {
+    const octokit = getOctokit();
+    const { owner, repo } = getRepoInfo();
+
+    const response = await octokit.pulls.list({
         owner,
         repo,
-        ref: `refs/heads/${newBranch}`,
-        sha,
+        state: 'open',
+        head: `${owner}:ai-staging`
     });
+
+    if (response.data.length > 0) {
+        return response.data[0];
+    }
+    return null;
 }
 
 /**
@@ -238,11 +269,12 @@ async function cleanupOldPullRequests() {
 
 module.exports = {
     fetchFile,
-    createBranch,
+    resetOrCreateBranch,
     commitFile,
     createPullRequest,
     getPullRequest,
     mergePullRequest,
     waitForPrBuild,
-    cleanupOldPullRequests
+    cleanupOldPullRequests,
+    findOpenAiStagingPr
 };

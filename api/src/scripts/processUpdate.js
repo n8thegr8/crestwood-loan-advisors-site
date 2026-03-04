@@ -15,85 +15,67 @@ async function processUpdate() {
         
         console.log('Processing update requested by:', senderEmail);
 
-        if (prNumber) {
-            // Iterative Update Logic
-            console.log(`Iterative update requested for PR #${prNumber}.`);
-            
-            // Fetch existing PR to get its head branch
-            const prData = await getPullRequest(prNumber);
-            const prBranch = prData.head.ref;
-            
-            // Fetch current HTML from the PR branch
-            console.log(`Fetching index.html from PR branch: ${prBranch}...`);
-            const prFile = await fetchFile(prBranch, 'index.html');
-            if (!prFile) {
-                throw new Error(`index.html not found on branch ${prBranch}.`);
-            }
-            
-            // Modify with LLM
-            console.log('Calling LLM to iteratively modify HTML...');
-            const newHtml = await modifyHtmlWithLlm(prFile.content, userRequest, assetUrls);
-            
-            // Commit updated file to the existing branch
-            console.log('Committing iterative changes to branch...');
-            await commitFile(
-                prBranch, 
-                'index.html', 
-                newHtml, 
-                'Iterative automated update from AI Site Manager\n\nRequest: ' + userRequest, 
-                prFile.sha
-            );
-            
-            // Re-send the preview email to let them know it has been updated
+        const targetBranch = 'ai-staging';
+
+        console.log('Checking for existing open AI staging PR...');
+        const openPr = await findOpenAiStagingPr();
+        
+        let existingPrNumber = openPr ? openPr.number : null;
+        let existingPrUrl = openPr ? openPr.html_url : null;
+        let baseRef = 'main';
+
+        if (openPr) {
+            console.log(`Found existing PR #${existingPrNumber}. Using it as base for iterative update.`);
+            baseRef = targetBranch;
+        }
+
+        // Fetch index.html
+        console.log(`Fetching index.html from ${baseRef} branch...`);
+        let baseFile = await fetchFile(baseRef, 'index.html');
+        if (!baseFile) {
+            // Fallback for first run or if file is missing
+            baseFile = await fetchFile('main', 'index.html');
+            if (!baseFile) throw new Error(`index.html not found on main branch.`);
+        }
+
+        // Modify with LLM
+        console.log('Calling LLM to modify HTML...');
+        const newHtml = await modifyHtmlWithLlm(baseFile.content, userRequest, assetUrls);
+
+        if (!openPr) {
+            // Reset ai-staging branch to point to main before pushing fresh changes
+            console.log(`Resetting or creating branch ${targetBranch} from main...`);
+            await resetOrCreateBranch('main', targetBranch);
+        }
+        
+        // Fetch the SHA of the targetBranch file so we can overwrite it
+        const targetFile = await fetchFile(targetBranch, 'index.html');
+
+        console.log(`Committing changes to ${targetBranch}...`);
+        await commitFile(
+            targetBranch, 
+            'index.html', 
+            newHtml, 
+            'Automated update from AI Site Manager\n\nRequest: ' + userRequest, 
+            targetFile ? targetFile.sha : undefined
+        );
+
+        if (existingPrNumber) {
+            console.log(`Iterative PR #${existingPrNumber} updated.`);
             if (senderEmail) {
                 console.log('Sending iterative preview email to: ' + senderEmail);
-                await sendPreviewEmail(senderEmail, prData.html_url, prNumber);
+                await sendPreviewEmail(senderEmail, existingPrUrl, existingPrNumber);
             }
         } else {
-            // New PR Logic
-            console.log('Fetching index.html from staging branch...');
-            const stagingFile = await fetchFile('staging', 'index.html');
-            if (!stagingFile) {
-                throw new Error('index.html not found on staging branch.');
-            }
-
-            // Modify with LLM
-            console.log('Calling LLM to modify HTML...');
-            const newHtml = await modifyHtmlWithLlm(stagingFile.content, userRequest, assetUrls);
-
-            // Create unique branch from staging
-            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-            const newBranchName = 'ai-update-' + timestamp;
-            
-            console.log('Creating new branch: ' + newBranchName);
-            await createBranch('staging', newBranchName);
-
-            // Commit updated file to new branch
-            console.log('Committing changes to new branch...');
-            await commitFile(
-                newBranchName, 
-                'index.html', 
-                newHtml, 
-                'Automated update from AI Site Manager\n\nRequest: ' + userRequest, 
-                stagingFile.sha
-            );
-
-            // Clean up old PRs
-            console.log('Cleaning up old AI-generated PRs...');
-            await cleanupOldPullRequests();
-
-            // Open Pull Request
             console.log('Creating Pull Request...');
             const pr = await createPullRequest(
-                newBranchName, 
+                targetBranch, 
                 'main', 
                 'AI Update Request: ' + userRequest.substring(0, 50), 
                 '## Automated PR by AI Site Manager\n\n**User Request:**\n> ' + userRequest + '\n\n---\n**Debug Info:**\n```\n' + (debugInfo || 'None') + '\n```'
             );
-
             console.log('PR Created successfully: ' + pr.html_url);
             
-            // Send the preview email
             if (senderEmail) {
                 console.log('Sending preview email to: ' + senderEmail);
                 await sendPreviewEmail(senderEmail, pr.html_url, pr.number);
