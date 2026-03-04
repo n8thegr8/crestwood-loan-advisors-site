@@ -1,0 +1,30 @@
+name: Process Site Update
+
+on:
+  repository_dispatch:
+    types: [site_update_requested]
+
+jobs:
+  process-update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Install Dependencies
+        working-directory: ./api
+        run: npm ci || npm install
+
+      - name: Process LLM Update
+        working-directory: ./api
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+          SENDGRID_FROM_EMAIL: ${{ secrets.SENDGRID_FROM_EMAIL }}
+          PAYLOAD: ${{ toJSON(github.event.client_payload) }}
+        run: node src/scripts/processUpdate.js

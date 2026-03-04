@@ -137,21 +137,30 @@ app.http('webhookHandler', {
                 }
             }
 
-            // Push to queue for background processing
-            context.log('Pushing request to Azure Storage Queue...');
-            const { enqueueUpdateTask } = require('../services/azureQueueService');
-            await enqueueUpdateTask({
-                userRequest,
-                assetUrls,
-                senderEmail,
-                prNumber,
-                debugInfo
+            // Trigger background processing via GitHub Actions workflow
+            context.log('Pushing request to GitHub Actions...');
+            const { Octokit } = require('@octokit/rest');
+            const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
+            const owner = process.env.GITHUB_OWNER || 'n8thegr8';
+            const repo = process.env.GITHUB_REPO || 'crestwood-loan-advisors-site';
+            
+            await octokit.repos.createDispatchEvent({
+                owner,
+                repo,
+                event_type: 'site_update_requested',
+                client_payload: {
+                    userRequest,
+                    assetUrls,
+                    senderEmail,
+                    prNumber,
+                    debugInfo
+                }
             });
 
             return {
                 status: 200,
                 jsonBody: {
-                    message: 'Successfully queued request for processing.',
+                    message: 'Successfully triggered GitHub Action processing.',
                     queued: true
                 }
             };
