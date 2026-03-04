@@ -104,6 +104,9 @@ app.http('webhookHandler', {
                 return { status: 400, body: 'User request content is required. Debug: ' + debugInfo };
             }
 
+            // Clean quoted replies from the email body to prevent LLM confusion and false-positive approvals
+            userRequest = userRequest.split(/(?:\r?\n\s*>|\r?\nOn .*?wrote:|\r?\n_{5,}|\r?\n-{3,}\s*Original)/i)[0].trim();
+
             context.log('Processing request: ' + userRequest.substring(0, 200));
 
             // Check if this is a reply to an existing PR preview email
