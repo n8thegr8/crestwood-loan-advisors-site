@@ -16,12 +16,12 @@ async function sendPreviewEmail(toEmail, prUrl, prNumber) {
     const sg = getSendGridClient();
     const fromEmail = process.env.SENDGRID_FROM_EMAIL || 'changes@updates.natemaxfield.com';
 
-    // The Azure Preview URL format is highly predictable based on the Azure App ID + Region
-    const previewUrl = `https://blue-mud-0763ba80f-${prNumber}.eastus2.2.azurestaticapps.net`;
+    // The Azure Preview URL format is highly predictable based on the Azure App ID
+    const previewUrl = `https://blue-mud-0763ba80f-${prNumber}.2.azurestaticapps.net`;
 
     // The Azure Preview URL format is typically based on the default hostname and PR number
     // E.g., https://blue-mud-0763ba80f.2.azurestaticapps.net
-    // Becomes: https://blue-mud-0763ba80f-pr-5.centralus.azurestaticapps.net
+    // Becomes: https://blue-mud-0763ba80f-5.2.azurestaticapps.net
     
     // As a robust fallback, we send them to the PR page where Azure explicitly comments the exact URL.
     const msg = {
