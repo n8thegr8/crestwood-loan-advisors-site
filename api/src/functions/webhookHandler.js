@@ -105,7 +105,8 @@ app.http('webhookHandler', {
             }
 
             // Clean quoted replies from the email body to prevent LLM confusion and false-positive approvals
-            userRequest = userRequest.split(/(?:\r?\n\s*>|\r?\nOn .*?wrote:|\r?\n_{5,}|\r?\n-{3,}\s*Original)/i)[0].trim();
+            // Catch common email client quoting formats AND specifically look for our own email template text
+            userRequest = userRequest.split(/(?:\r?\n\s*>|\r?\nOn .*?wrote:|\r?\n_{5,}|\r?\n-{3,}\s*Original|\nFrom:.*|\nDate:.*|Your Site Update is Ready!|Next Steps:|Click the button below to view)/i)[0].trim();
 
             context.log('Processing request: ' + userRequest.substring(0, 200));
 
