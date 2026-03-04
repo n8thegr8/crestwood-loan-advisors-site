@@ -20,12 +20,15 @@ async function modifyHtmlWithLlm(currentHtml, userRequest, assetUrls = []) {
 Your task is to modify the provided HTML based on the user's request.
 
 CRITICAL DESIGN CONSTRAINTS:
-1. Preserve the existing UI, UX, and overall design language of the site.
-2. ANY new elements MUST seamlessly integrate with the current aesthetics.
-3. This site uses pure Vanilla CSS and NO external frameworks (no Tailwind, no Bootstrap). When adding complex new elements (like audio players or videos), you may inject a <style> block with custom CSS to ensure they look professionally placed with ample breathing room, or use inline styles (e.g., \`style="margin-top: 30px; margin-bottom: 30px; padding: 20px;"\`). Do not let elements crash into each other.
-4. Pay strictly close attention to placement instructions. If the user asks to place an element "after" a section, ensure it is the immediate sibling after that section's container.
-5. You are empowered to make creative design decisions to make the final result look beautiful and premium, as long as it matches the existing site theme.
-6. Only make the specific additions/changes requested by the user, leaving the rest of the document intact.
+1. Preserve the existing UI, UX, and overall design language.
+2. ANY new sections MUST be wrapped in a <section> tag with a <div class="container"> inside it to maintain consistent horizontal alignment and margins across the site.
+3. Use the site's standard section headers:
+   - Wrap section titles in a <div class="section-header">.
+   - Use <h3> for the main section title and <p> for the subtitle if requested.
+4. Ensure ample vertical spacing. New sections should typically have "padding: 80px 0;" or "padding: 100px 0;" to match the rest of the site's breathing room.
+5. This site uses Vanilla CSS. Adhere to the variables defined in :root (e.g., --primary-color, --accent-color, --font-heading, --font-body, --bg-body, --bg-card, --border-subtle, --shadow-sm, --shadow-md, --shadow-lg).
+6. When adding interactive elements like <audio> or <video>, ensure they are centered and styled to look premium (e.g., using max-width, margin: 0 auto, and subtle shadows).
+7. Only make the specific additions/changes requested by the user, leaving the rest of the document intact.
 
 ASSET INTEGRATION:
 - If new asset URLs are explicitly provided to you in the prompt, you MUST use them as the \`src\` or \`href\` for new media elements (like <audio>, <img>, or <video>). Do not use placeholder URLs.
@@ -37,9 +40,23 @@ You MUST output ONLY the raw, valid HTML code representing the entire modified d
         assetsText = `\n\nHere are the URLs of the new assets provided by the user. Use them in your HTML updates:\n${assetUrls.join('\n')}`;
     }
 
+    // Try to include styles.css content for context
+    let stylesContext = '';
+    try {
+        const fs = require('fs');
+        const path = require('path');
+        // From api/src/services/llmService.js to project root
+        const stylesPath = path.join(__dirname, '..', '..', '..', 'styles.css');
+        if (fs.existsSync(stylesPath)) {
+            stylesContext = `\n\nExisting Styles (for reference only, do not output this):\n${fs.readFileSync(stylesPath, 'utf8')}`;
+        }
+    } catch (e) {
+        // Ignore if we can't read it
+    }
+
     const messages = [
         { role: 'system', content: systemPrompt },
-        { role: 'user', content: `Current HTML:\n\n${currentHtml}\n\nUser Request: ${userRequest}${assetsText}` }
+        { role: 'user', content: `Current HTML:\n\n${currentHtml}${stylesContext}\n\nUser Request: ${userRequest}${assetsText}` }
     ];
 
     const response = await openai.chat.completions.create({

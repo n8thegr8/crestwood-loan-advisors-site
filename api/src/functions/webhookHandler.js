@@ -130,10 +130,9 @@ app.http('webhookHandler', {
                 context.log('Sending acknowledgment email to: ' + senderEmail);
                 try {
                     const { sendAckEmail } = require('../services/emailService');
-                    // We don't await this so it runs in the background and doesn't hold up processing
-                    sendAckEmail(senderEmail).catch(e => context.error('Background ack email failed:', e));
+                    await sendAckEmail(senderEmail);
                 } catch (e) {
-                    context.error('Failed to trigger background ack email:', e);
+                    context.error('Failed to send background ack email:', e);
                 }
             }
 
