@@ -1,5 +1,5 @@
 const fs = require('fs');
-const { fetchFile, createBranch, commitFile, createPullRequest, getPullRequest, cleanupOldPullRequests } = require('../services/githubService');
+const { fetchFile, resetOrCreateBranch, commitFile, createPullRequest, getPullRequest, cleanupOldPullRequests, findOpenAiStagingPr } = require('../services/githubService');
 const { modifyHtmlWithLlm } = require('../services/llmService');
 const { sendPreviewEmail } = require('../services/emailService');
 
