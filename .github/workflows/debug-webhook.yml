@@ -1,0 +1,12 @@
+name: Debug Webhook
+on:
+  repository_dispatch:
+    types: [site_update_debug]
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Output Payload
+        run: |
+          echo "Webhook Debug Payload Received:"
+          echo '${{ toJSON(github.event.client_payload) }}'

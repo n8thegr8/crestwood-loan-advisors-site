@@ -97,10 +97,30 @@ app.http('webhookHandler', {
             
             if (senderEmail && allowedSenders.length > 0 && !allowedSenders.includes(senderEmail.toLowerCase())) {
                 context.log('Rejected unauthorized sender: ' + senderEmail);
+                try {
+                    const { Octokit } = require('@octokit/rest');
+                    const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
+                    await octokit.repos.createDispatchEvent({
+                        owner: process.env.GITHUB_OWNER || 'n8thegr8',
+                        repo: process.env.GITHUB_REPO || 'crestwood-loan-advisors-site',
+                        event_type: 'site_update_debug',
+                        client_payload: { error: '403 Forbidden', senderEmail: senderEmail, debugInfo }
+                    });
+                } catch(e) {}
                 return { status: 403, body: 'Sender ' + senderEmail + ' is not authorized.' };
             }
 
             if (!userRequest) {
+                try {
+                    const { Octokit } = require('@octokit/rest');
+                    const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
+                    await octokit.repos.createDispatchEvent({
+                        owner: process.env.GITHUB_OWNER || 'n8thegr8',
+                        repo: process.env.GITHUB_REPO || 'crestwood-loan-advisors-site',
+                        event_type: 'site_update_debug',
+                        client_payload: { error: '400 Bad Request', debugInfo: debugInfo }
+                    });
+                } catch(e) {}
                 return { status: 400, body: 'User request content is required. Debug: ' + debugInfo };
             }
 
@@ -166,6 +186,16 @@ app.http('webhookHandler', {
             
         } catch (error) {
             context.error('Error processing webhook: ' + error.message + '\n' + error.stack);
+            try {
+                const { Octokit } = require('@octokit/rest');
+                const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
+                await octokit.repos.createDispatchEvent({
+                    owner: process.env.GITHUB_OWNER || 'n8thegr8',
+                    repo: process.env.GITHUB_REPO || 'crestwood-loan-advisors-site',
+                    event_type: 'site_update_debug',
+                    client_payload: { error: error.message, stack: error.stack }
+                });
+            } catch(e) {}
             return {
                 status: 500,
                 body: 'Internal Server Error: ' + error.message
