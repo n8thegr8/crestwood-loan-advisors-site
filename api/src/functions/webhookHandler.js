@@ -121,9 +121,47 @@ app.http('webhookHandler', {
                         jsonBody: { message: 'Successfully merged PR #' + prNumber + '.' }
                     };
                 } else {
+                    context.log(`Iterative update requested for PR #${prNumber}.`);
+                    const { getPullRequest } = require('../services/githubService');
+                    
+                    // Fetch existing PR to get its head branch
+                    const prData = await getPullRequest(prNumber);
+                    const prBranch = prData.head.ref;
+                    
+                    // Fetch current HTML from the PR branch
+                    context.log(`Fetching index.html from PR branch: ${prBranch}...`);
+                    const prFile = await fetchFile(prBranch, 'index.html');
+                    if (!prFile) {
+                        return { status: 500, body: `index.html not found on branch ${prBranch}.` };
+                    }
+                    
+                    // Modify with LLM
+                    context.log('Calling LLM to iteratively modify HTML...');
+                    const newHtml = await modifyHtmlWithLlm(prFile.content, userRequest, assetUrls);
+                    
+                    // Commit updated file to the existing branch
+                    context.log('Committing iterative changes to branch...');
+                    await commitFile(
+                        prBranch, 
+                        'index.html', 
+                        newHtml, 
+                        'Iterative automated update from AI Site Manager\n\nRequest: ' + userRequest, 
+                        prFile.sha
+                    );
+                    
+                    // Re-send the preview email to let them know it has been updated
+                    if (senderEmail) {
+                        context.log('Sending iterative preview email to: ' + senderEmail);
+                        try {
+                            await sendPreviewEmail(senderEmail, prData.html_url, prNumber);
+                        } catch (emailError) {
+                            context.error('Failed to send iterative preview email: ' + emailError.message);
+                        }
+                    }
+                    
                     return {
                         status: 200,
-                        jsonBody: { message: 'No approval keyword found. Reply with "Approved" to deploy.' }
+                        jsonBody: { message: `Successfully pushed iterative updates to PR #${prNumber}.` }
                     };
                 }
             }

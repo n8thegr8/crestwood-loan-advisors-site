@@ -101,6 +101,22 @@ async function createPullRequest(head, base, title, body) {
 }
 
 /**
+ * Fetches data for an existing Pull Request
+ */
+async function getPullRequest(pullNumber) {
+    const octokit = getOctokit();
+    const { owner, repo } = getRepoInfo();
+
+    const response = await octokit.pulls.get({
+        owner,
+        repo,
+        pull_number: pullNumber,
+    });
+
+    return response.data;
+}
+
+/**
  * Merges a Pull Request by its number
  */
 async function mergePullRequest(pullNumber) {
@@ -225,6 +241,7 @@ module.exports = {
     createBranch,
     commitFile,
     createPullRequest,
+    getPullRequest,
     mergePullRequest,
     waitForPrBuild,
     cleanupOldPullRequests
