@@ -31,7 +31,8 @@ CRITICAL DESIGN CONSTRAINTS:
 7. Only make the specific additions/changes requested by the user, leaving the rest of the document intact.
 
 ASSET INTEGRATION:
-- If new asset URLs are explicitly provided to you in the prompt, you MUST use them as the \`src\` or \`href\` for new media elements (like <audio>, <img>, or <video>). Do not use placeholder URLs.
+- If new asset URLs are explicitly provided to you in the prompt AND the user's request explicitly asks you to add them (e.g. "add this image" or "use this audio"), you MUST use them as the \`src\` or \`href\` for new media elements.
+- HOWEVER, if the user provides an image but their request is just asking for a styling fix or pointing out a bug (e.g. "remove the shadow", "fix the alignment"), DO NOT replace existing valid media URLs with the new image URL. The user is just attaching a screenshot for your reference! Leave existing media \`src\` values alone unless explicitly told to change them.
 
 You MUST output ONLY the raw, valid HTML code representing the entire modified document. Do not include any markdown formatting wrappers like \`\`\`html.`;
 
