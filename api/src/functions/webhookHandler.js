@@ -110,8 +110,23 @@ app.http('webhookHandler', {
 
             context.log('Processing request: ' + userRequest.substring(0, 200));
 
+            // Check if this is a reply to an existing PR preview email
+            const prMatch = emailSubject.match(/\[PR\s+#(\d+)\]/i);
+            const prNumber = prMatch ? parseInt(prMatch[1], 10) : null;
+            const isApproval = /\b(approve|approved|looks good|lgtm|merge|go ahead|do it)\b/i.test(userRequest);
+            
+            if (isApproval && prNumber) {
+                context.log('Approval received for PR #' + prNumber);
+                const { mergePullRequest } = require('../services/githubService');
+                await mergePullRequest(prNumber);
+                return {
+                    status: 200,
+                    jsonBody: { message: 'Successfully merged PR #' + prNumber + '.' }
+                };
+            }
+
             // Send immediate acknowledgement email so they know we're working on it
-            if (senderEmail && !/\b(approve|approved|looks good|lgtm|merge|go ahead|do it)\b/i.test(userRequest)) {
+            if (senderEmail) {
                 context.log('Sending acknowledgment email to: ' + senderEmail);
                 try {
                     const { sendAckEmail } = require('../services/emailService');
@@ -122,126 +137,22 @@ app.http('webhookHandler', {
                 }
             }
 
-            // Check if this is a reply to an existing PR preview email
-            const prMatch = emailSubject.match(/\[PR\s+#(\d+)\]/i);
-            if (prMatch) {
-                const prNumber = parseInt(prMatch[1], 10);
-                const isApproval = /\b(approve|approved|looks good|lgtm|merge|go ahead|do it)\b/i.test(userRequest);
-                
-                if (isApproval) {
-                    context.log('Approval received for PR #' + prNumber);
-                    const { mergePullRequest } = require('../services/githubService');
-                    await mergePullRequest(prNumber);
-                    return {
-                        status: 200,
-                        jsonBody: { message: 'Successfully merged PR #' + prNumber + '.' }
-                    };
-                } else {
-                    context.log(`Iterative update requested for PR #${prNumber}.`);
-                    const { getPullRequest } = require('../services/githubService');
-                    
-                    // Fetch existing PR to get its head branch
-                    const prData = await getPullRequest(prNumber);
-                    const prBranch = prData.head.ref;
-                    
-                    // Fetch current HTML from the PR branch
-                    context.log(`Fetching index.html from PR branch: ${prBranch}...`);
-                    const prFile = await fetchFile(prBranch, 'index.html');
-                    if (!prFile) {
-                        return { status: 500, body: `index.html not found on branch ${prBranch}.` };
-                    }
-                    
-                    // Modify with LLM
-                    context.log('Calling LLM to iteratively modify HTML...');
-                    const newHtml = await modifyHtmlWithLlm(prFile.content, userRequest, assetUrls);
-                    
-                    // Commit updated file to the existing branch
-                    context.log('Committing iterative changes to branch...');
-                    await commitFile(
-                        prBranch, 
-                        'index.html', 
-                        newHtml, 
-                        'Iterative automated update from AI Site Manager\n\nRequest: ' + userRequest, 
-                        prFile.sha
-                    );
-                    
-                    // Re-send the preview email to let them know it has been updated
-                    if (senderEmail) {
-                        context.log('Sending iterative preview email to: ' + senderEmail);
-                        try {
-                            await sendPreviewEmail(senderEmail, prData.html_url, prNumber);
-                        } catch (emailError) {
-                            context.error('Failed to send iterative preview email: ' + emailError.message);
-                        }
-                    }
-                    
-                    return {
-                        status: 200,
-                        jsonBody: { message: `Successfully pushed iterative updates to PR #${prNumber}.` }
-                    };
-                }
-            }
+            // Push to queue for background processing
+            context.log('Pushing request to Azure Storage Queue...');
+            const { enqueueUpdateTask } = require('../services/azureQueueService');
+            await enqueueUpdateTask({
+                userRequest,
+                assetUrls,
+                senderEmail,
+                prNumber,
+                debugInfo
+            });
 
-            // 1. Fetch current HTML from staging branch
-            context.log('Fetching index.html from staging branch...');
-            const stagingFile = await fetchFile('staging', 'index.html');
-            if (!stagingFile) {
-                return { status: 500, body: 'index.html not found on staging branch.' };
-            }
-
-            // 2. Modify with LLM
-            context.log('Calling LLM to modify HTML...');
-            const newHtml = await modifyHtmlWithLlm(stagingFile.content, userRequest, assetUrls);
-
-            // 3. Create unique branch from staging
-            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-            const newBranchName = 'ai-update-' + timestamp;
-            
-            context.log('Creating new branch: ' + newBranchName);
-            await createBranch('staging', newBranchName);
-
-            // 4. Commit updated file to new branch
-            context.log('Committing changes to new branch...');
-            await commitFile(
-                newBranchName, 
-                'index.html', 
-                newHtml, 
-                'Automated update from AI Site Manager\n\nRequest: ' + userRequest, 
-                stagingFile.sha
-            );
-
-            // 4.5 Clean up old PRs to free up Azure environments before creating a new one
-            context.log('Cleaning up old AI-generated PRs...');
-            const { cleanupOldPullRequests } = require('../services/githubService');
-            await cleanupOldPullRequests();
-
-            // 5. Open Pull Request to main branch to trigger Azure Preview Environment
-            context.log('Creating Pull Request...');
-            const pr = await createPullRequest(
-                newBranchName, 
-                'main', 
-                'AI Update Request: ' + userRequest.substring(0, 50), 
-                '## Automated PR by AI Site Manager\n\n**User Request:**\n> ' + userRequest + '\n\n---\n**Debug Info:**\n```\n' + debugInfo + '\n```'
-            );
-
-            context.log('PR Created successfully: ' + pr.html_url);
-            
-            // 6. Send the preview email to the original sender immediately to prevent SendGrid timeouts
-            if (senderEmail) {
-                context.log('Sending preview email to: ' + senderEmail);
-                try {
-                    await sendPreviewEmail(senderEmail, pr.html_url, pr.number);
-                } catch (emailError) {
-                    context.error('Failed to send preview email: ' + emailError.message);
-                }
-            }
-            
             return {
                 status: 200,
                 jsonBody: {
-                    message: 'Successfully processed request and created PR. Build is starting.',
-                    prUrl: pr.html_url,
-                    prNumber: pr.number
+                    message: 'Successfully queued request for processing.',
+                    queued: true
                 }
             };
             

@@ -3,12 +3,10 @@
   "version": "1.0.0",
   "description": "",
   "main": "src/functions/*.js",
-  "engines": {
-    "node": "20.x"
-  },
   "dependencies": {
     "@azure/functions": "^4.11.2",
     "@azure/storage-blob": "^12.31.0",
+    "@azure/storage-queue": "^12.29.0",
     "@octokit/rest": "^22.0.1",
     "@sendgrid/mail": "^8.1.6",
     "asynckit": "^0.4.0",
