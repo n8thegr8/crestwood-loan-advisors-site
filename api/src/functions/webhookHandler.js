@@ -110,6 +110,18 @@ app.http('webhookHandler', {
 
             context.log('Processing request: ' + userRequest.substring(0, 200));
 
+            // Send immediate acknowledgement email so they know we're working on it
+            if (senderEmail && !/\b(approve|approved|looks good|lgtm|merge|go ahead|do it)\b/i.test(userRequest)) {
+                context.log('Sending acknowledgment email to: ' + senderEmail);
+                try {
+                    const { sendAckEmail } = require('../services/emailService');
+                    // We don't await this so it runs in the background and doesn't hold up processing
+                    sendAckEmail(senderEmail).catch(e => context.error('Background ack email failed:', e));
+                } catch (e) {
+                    context.error('Failed to trigger background ack email:', e);
+                }
+            }
+
             // Check if this is a reply to an existing PR preview email
             const prMatch = emailSubject.match(/\[PR\s+#(\d+)\]/i);
             if (prMatch) {
