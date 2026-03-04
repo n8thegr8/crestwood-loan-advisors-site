@@ -164,6 +164,23 @@ async function mergePullRequest(pullNumber) {
 }
 
 /**
+ * Closes a Pull Request by its number
+ */
+async function closePullRequest(pullNumber) {
+    const octokit = getOctokit();
+    const { owner, repo } = getRepoInfo();
+
+    const response = await octokit.pulls.update({
+        owner,
+        repo,
+        pull_number: pullNumber,
+        state: 'closed'
+    });
+
+    return response.data;
+}
+
+/**
  * Polls the GitHub Actions API to wait for the PR's build to complete
  */
 async function waitForPrBuild(prNumber, maxWaitSeconds = 300) {
@@ -274,6 +291,7 @@ module.exports = {
     createPullRequest,
     getPullRequest,
     mergePullRequest,
+    closePullRequest,
     waitForPrBuild,
     cleanupOldPullRequests,
     findOpenAiStagingPr

@@ -134,6 +134,7 @@ app.http('webhookHandler', {
             const prMatch = emailSubject.match(/\[PR\s+#(\d+)\]/i);
             const prNumber = prMatch ? parseInt(prMatch[1], 10) : null;
             const isApproval = /\b(approve|approved|looks good|lgtm|merge|go ahead|do it)\b/i.test(userRequest);
+            const isRejection = /\b(reject|rejected|cancel|cancelled|discard|abort|stop|start over)\b/i.test(userRequest);
             
             if (isApproval && prNumber) {
                 context.log('Approval received for PR #' + prNumber);
@@ -142,6 +143,21 @@ app.http('webhookHandler', {
                 return {
                     status: 200,
                     jsonBody: { message: 'Successfully merged PR #' + prNumber + '.' }
+                };
+            } else if (isRejection && prNumber) {
+                context.log('Rejection received for PR #' + prNumber);
+                const { closePullRequest } = require('../services/githubService');
+                const { sendRejectEmail } = require('../services/emailService');
+                
+                await closePullRequest(prNumber);
+                
+                if (senderEmail) {
+                    await sendRejectEmail(senderEmail, prNumber);
+                }
+                
+                return {
+                    status: 200,
+                    jsonBody: { message: 'Successfully discarded changes and closed PR #' + prNumber + '.' }
                 };
             }
 

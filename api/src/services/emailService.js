@@ -28,7 +28,7 @@ async function sendPreviewEmail(toEmail, prUrl, prNumber) {
         to: toEmail,
         from: fromEmail,
         subject: `Your Site Update is Ready for Review! [PR #${prNumber}]`,
-        text: `Your requested changes have been processed by the AI Site Manager.\n\nA Secure Preview Environment has been automatically generated for you to review the changes before they go live.\n\nPlease visit your live Preview URL:\n${previewUrl}\n\nIf everything looks good, respond to this email with "Approved" and I will push it live!\n\n(Advanced: View GitHub Pull Request Data - ${prUrl})`,
+        text: `Your requested changes have been processed by the AI Site Manager.\n\nA Secure Preview Environment has been automatically generated for you to review the changes before they go live.\n\nPlease visit your live Preview URL:\n${previewUrl}\n\nIf everything looks good, respond to this email with "Approved" and I will push it live!\n\nIf you want to discard these changes and start fresh, respond to this email with "Reject".\n\n(Advanced: View GitHub Pull Request Data - ${prUrl})`,
         html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
                 <h2 style="color: #2b6cb0;">Your Site Update is Ready!</h2>
@@ -41,6 +41,7 @@ async function sendPreviewEmail(toEmail, prUrl, prNumber) {
                         <li>Click the button below to view the live preview of the site.</li>
                         <li><strong>Note:</strong> It usually takes Azure 1-2 minutes to finish booting the staging server. If you see a "404 Not Found" page, just wait 60 seconds and refresh!</li>
                         <li>Review the live site. If everything looks good, <strong>Respond to this email with "Approved" and I will push it live!</strong></li>
+                        <li>If you want to discard the changes and start fresh, <strong>Respond to this email with "Reject" or "Cancel"</strong>.</li>
                     </ol>
                 </div>
 
@@ -107,7 +108,45 @@ async function sendAckEmail(toEmail) {
     }
 }
 
+/**
+ * Sends an email confirming the PR was closed and changes discarded.
+ */
+async function sendRejectEmail(toEmail, prNumber) {
+    const sg = getSendGridClient();
+    const fromEmail = process.env.SENDGRID_FROM_EMAIL || 'changes@updates.natemaxfield.com';
+
+    const msg = {
+        to: toEmail,
+        from: fromEmail,
+        subject: `Changes Discarded [PR #${prNumber}]`,
+        text: `We have successfully discarded the proposed changes and closed the preview environment.\n\nThe next time you email a request, we will start fresh from your live site.`,
+        html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+                <h2 style="color: #e53e3e;">Changes Discarded</h2>
+                <p>Hello,</p>
+                <p>We have successfully discarded the proposed changes and closed the preview environment (PR #${prNumber}).</p>
+                
+                <div style="background-color: #f7fafc; padding: 15px; border-left: 4px solid #a0aec0; margin: 20px 0;">
+                    <p>The next time you email a request, the AI Site Manager will start fresh from your live site.</p>
+                </div>
+                
+                <p style="margin-top: 30px; font-size: 12px; color: #718096;">
+                    * This is an automated message from your AI Site Manager.
+                </p>
+            </div>
+        `
+    };
+
+    try {
+        await sg.send(msg);
+        console.log(`Reject email successfully sent to ${toEmail}`);
+    } catch (error) {
+        console.error('Error sending reject email via SendGrid:', error);
+    }
+}
+
 module.exports = {
     sendPreviewEmail,
-    sendAckEmail
+    sendAckEmail,
+    sendRejectEmail
 };
